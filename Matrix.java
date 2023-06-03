@@ -1,7 +1,11 @@
+// Adapted from: https://introcs.cs.princeton.edu/java/95linear/Matrix.java.html
 // Immutable matrix implementation
+
+import java.util.function.Function;
+
 final public class Matrix {
-    private final int R;
-    private final int C;
+    public final int R;
+    public final int C;
     private final double[][] data;
 
     // Zero matrix
@@ -20,6 +24,13 @@ final public class Matrix {
                 this.data[r][c] = data[r][c];
     }
 
+    public static Matrix columnVector(double[] data) {
+        Matrix A = new Matrix(data.length, 1);
+        for (int r = 0; r < data.length; r++)
+            A.data[r][0] = data[r];
+        return A;
+    }
+
     // Copy constructor
     private Matrix(Matrix A) {
         this(A.data);
@@ -31,6 +42,15 @@ final public class Matrix {
         for (int r = 0; r < R; r++)
             for (int c = 0; c < C; c++)
                 A.data[r][c] = Math.random();
+        return A;
+    }
+
+    // MxN matrix of all 1's
+    public static Matrix ones(int M, int N) {
+        Matrix A = new Matrix(M, N);
+        for (int r = 0; r < M; r++)
+            for (int c = 0; c < N; c++)
+                A.data[r][c] = 1;
         return A;
     }
 
@@ -57,52 +77,72 @@ final public class Matrix {
         return A;
     }
 
-    // Z = X + Y
-    public Matrix add(Matrix Y) {
+    public Matrix zipWith(Matrix Y, Function<Double, Function<Double, Double>> f) {
         Matrix X = this;
         if (Y.R != X.R || Y.C != X.C)
-            throw new RuntimeException("Illegal matrix dimensions.");
+            throw new RuntimeException("Illegal matrix dimensions. " + X.dims() + " " + Y.dims());
         Matrix Z = new Matrix(R, C);
         for (int r = 0; r < R; r++)
             for (int c = 0; c < C; c++)
-                Z.data[r][c] = X.data[r][c] + Y.data[r][c];
+                Z.data[r][c] = f.apply(X.data[r][c]).apply(Y.data[r][c]);
         return Z;
+    }
+
+    // Z = X + Y
+    public Matrix add(Matrix Y) {
+        return zipWith(Y, x -> y -> x + y);
     }
 
     // Z = X - Y
     public Matrix sub(Matrix Y) {
-        Matrix X = this;
-        if (Y.R != X.R || Y.C != X.C)
-            throw new RuntimeException("Illegal matrix dimensions.");
-        Matrix Z = new Matrix(R, C);
-        for (int r = 0; r < R; r++)
-            for (int c = 0; c < C; c++)
-                Z.data[r][c] = X.data[r][c] - Y.data[r][c];
-        return Z;
+        return zipWith(Y, x -> y -> x - y);
+    }
+
+    // Hadamard product Z = X .* Y
+    public Matrix hadamard(Matrix Y) {
+        return zipWith(Y, x -> y -> x * y);
     }
 
     public boolean equals(Matrix Y) {
-        Matrix A = this;
-        if (Y.R != A.R || Y.C != A.C)
-            throw new RuntimeException("Illegal matrix dimensions.");
+        Matrix X = this;
+        if (Y.R != X.R || Y.C != X.C)
+            throw new RuntimeException("Illegal matrix dimensions. " + X.dims() + " " + Y.dims());
         for (int r = 0; r < R; r++)
             for (int c = 0; c < C; c++)
-                if (A.data[r][c] != Y.data[r][c])
+                if (X.data[r][c] != Y.data[r][c])
                     return false;
         return true;
     }
 
-    // Matrix multiplication C = A * B
+    // Scalar multiplication Z = k * X
+    public Matrix mult(double k) {
+        Matrix X = this;
+        Matrix Z = new Matrix(R, C);
+        for (int r = 0; r < R; r++)
+            for (int c = 0; c < C; c++)
+                Z.data[r][c] = k * X.data[r][c];
+        return Z;
+    }
+
+    // Matrix multiplication Z = X * Y
     public Matrix mult(Matrix Y) {
-        Matrix A = this;
-        if (A.C != Y.R)
-            throw new RuntimeException("Illegal matrix dimensions.");
-        Matrix C = new Matrix(A.R, Y.C);
-        for (int rC = 0; rC < C.R; rC++)
-            for (int cC = 0; cC < C.C; cC++)
-                for (int cA = 0; cA < A.C; cA++)
-                    C.data[rC][cC] += (A.data[rC][cA] * Y.data[cA][cC]);
-        return C;
+        Matrix X = this;
+        if (X.C != Y.R)
+            throw new RuntimeException("Illegal matrix dimensions. " + X.dims() + " " + Y.dims());
+        Matrix Z = new Matrix(X.R, Y.C);
+        for (int rZ = 0; rZ < Z.R; rZ++)
+            for (int cZ = 0; cZ < Z.C; cZ++)
+                for (int cA = 0; cA < X.C; cA++)
+                    Z.data[rZ][cZ] += (X.data[rZ][cA] * Y.data[cA][cZ]);
+        return Z;
+    }
+
+    public Matrix map(Function<Double, Double> f) {
+        Matrix A = new Matrix(this);
+        for (int r = 0; r < A.R; r++)
+            for (int c = 0; c < A.C; c++)
+                A.data[r][c] = f.apply(A.data[r][c]);
+        return A;
     }
 
     // x = A^-1 b, assuming A is square and has full rank
@@ -155,6 +195,10 @@ final public class Matrix {
 
     }
 
+    public double get(int r, int c) {
+        return data[r][c];
+    }
+;
     public String toString() {
         String res = "";
         for (int r = 0; r < R; r++) {
@@ -163,5 +207,9 @@ final public class Matrix {
             res += "\n";
         }
         return res;
+    }
+
+    public String dims() {
+        return "(" + R + ", " + C + ")";
     }
 }

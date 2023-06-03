@@ -4,7 +4,7 @@ build:
 	javac *.java
 
 run:
-	java Main
+	java Main -v
 
 clean:
 	rm *.class

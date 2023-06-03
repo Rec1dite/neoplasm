@@ -43,16 +43,24 @@ public class Main {
                     System.out.println("\n=====================================================");
                 }
                 String filePath = f.getAbsolutePath();
-                List<CancerData> data = readCancerDataFromFile(filePath);
+                List<TrainingData> data = readCancerDataFromFile(filePath);
+
+                // for (TrainingData d : data) System.out.println(d);
 
                 //===== RUN ALGORITHMS =====//
                 for (Algo algo : algos) {
                     if (verbose) { System.out.println(PURPLE + "Running " + algo.toString() + RESET); }
                     switch(algo) {
                         case ANN:
+                            ANN ann = new ANN(new int[] {9, 4, 2});
+                            ann.setData(data, 0.8);
+                            ann.train();
+                            ann.test();
+                            // System.out.println(ann.predict(Matrix.random(3, 1)));
                             // Split into training / testing sets
 
                             // Train:
+
                             // Predict:
                             break;
                         case GP:
@@ -73,8 +81,8 @@ public class Main {
 
     // File format:
     // class,age,menopause,tumor-size,inv-nodes,node-caps,deg-malig,breast,breast-quad,irradiat
-    public static List<CancerData> readCancerDataFromFile(String filePath) {
-        List<CancerData> res = new ArrayList<>();
+    public static List<TrainingData> readCancerDataFromFile(String filePath) {
+        List<TrainingData> res = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             System.out.println("File: " + BLUE + filePath + RESET);
@@ -82,7 +90,7 @@ public class Main {
 
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length == 10) { // We expect 10 columns
+                if (parts.length == 10) { // We expect 10 columns each row
                     res.add(new CancerData(parts));
                 }
                 else {
@@ -97,25 +105,6 @@ public class Main {
             e.printStackTrace();
         }
         return res;
-    }
-
-    static class CancerData {
-        int type;        // no-recurrence-events, recurrence-events
-        int age;         // 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89, 90-99
-        int menopause;   // lt40, ge40, premeno
-        int tumor_size;  // 0-4, 5-9, 10-14, 15-19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-49, 50-54, 55-59
-        int inv_nodes;   // 0-2, 3-5, 6-8, 9-11, 12-14, 15-17, 18-20, 21-23, 24-26, 27-29, 30-32, 33-35, 36-39
-        int node_caps;   // yes, no
-        int deg_malig;   // 1, 2, 3
-        int breast;      // left, right
-        int breast_quad; // left-up, left-low, right-up, right-low, central
-        int irradiat;    // yes, no
-
-        CancerData() {}
-        CancerData (String[] parts) {} // TODO
-        // TODO: Handle missing data '?'
-
-        Matrix oneHot() { return null; } // TODO
     }
 
     static class ArgParser {
