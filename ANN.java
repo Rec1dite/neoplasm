@@ -6,10 +6,10 @@ public class ANN {
     CostFunction costFunction;
     TrainingData[] training;
     TrainingData[] testing;
-    int batchSize = 10;
+    int batchSize = 20;
     int maxEpochs = 50;
-    double acceptableCost = 0.01; //If we get below this cost, we're done
-    double learningRate = 0.001;
+    double acceptableCost = 0.4; //If we get below this cost, we're done
+    double learningRate = 0.01;
 
     ANN(int[] layerSizes) {
         layers = new Layer[layerSizes.length - 1];
@@ -18,13 +18,14 @@ public class ANN {
             layers[i] = new Layer(layerSizes[i], layerSizes[i + 1]);
         }
 
+        // costFunction = new CategoricalCrossEntropy();
         costFunction = new MeanSquaredError();
     }
 
     void setData(List<TrainingData> data, double trainingRatio) {
         // Shuffle data
         for (int i = 0; i < data.size(); i++) {
-            int j = (int) (Math.random() * data.size());
+            int j = (int) (Utils.gen.nextDouble() * data.size());
             TrainingData temp = data.get(i);
             data.set(i, data.get(j));
             data.set(j, temp);
@@ -75,13 +76,11 @@ public class ANN {
             }
 
             double cost = costFunction.f(prediction, actual);
-
-            System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
-            System.out.println("ARGMAX:\n" + Main.BLUE + prediction.argMax() + Main.RESET);
-            System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
-            System.out.println("COST: " + Main.YELLOW + cost+ Main.RESET);
-
             avgCost += cost;
+
+            // System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
+            // System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
+            // System.out.println("COST: " + Main.YELLOW + cost+ Main.RESET);
         }
         avgCost /= testing.length;
         System.out.println("AVG COST: " + Main.PURPLE + avgCost + Main.RESET);
@@ -93,7 +92,7 @@ public class ANN {
         TrainingData[] result = new TrainingData[batchSize];
 
         for (int i = 0; i < batchSize; i++) {
-            result[i] = training[(int)(Math.random() * training.length)];
+            result[i] = training[(int)(Utils.gen.nextDouble() * training.length)];
         }
 
         return result;
@@ -325,7 +324,7 @@ public class ANN {
 
             // -(actual / prediction) + ((1 - actual) / (1 - prediction))
             return actual.zipWith(prediction, a -> p -> -(a/p) + ((1-a)/(1-p)))
-                .map(x -> Double.isFinite(x) ? x : 0.0);
+                .map(x -> Double.isNaN(x) ? 0 : x);
         }
     }
 
@@ -333,6 +332,7 @@ public class ANN {
 
     private Matrix calcGradient(Matrix layer, Matrix err, Activation act) {
         Matrix gradient = layer.map(act::df);
+        // Matrix gradient = new CategoricalCrossEntropy().outputError(layer, err);
         gradient = gradient.hadamard(err);
         return gradient.mult(learningRate);
     }
@@ -357,8 +357,11 @@ public class ANN {
 
     public void train2() {
         double avgCost = Double.MAX_VALUE;
-        for (int i = 0; i < maxEpochs; i++) {
-            avgCost = trainBatch();
+        for (int i = 0; i < maxEpochs && avgCost > acceptableCost; i++) {
+            avgCost = Math.abs(trainBatch());
+        }
+        if (avgCost <= acceptableCost) {
+            System.out.println(Main.RED + "Training stopped early with cost " + avgCost + Main.RESET);
         }
     }
 
@@ -384,7 +387,7 @@ public class ANN {
             input = lays[j];
         }
 
-        double cost = new MeanSquaredError().f(lays[lays.length - 1], target);
+        double cost = costFunction.f(lays[lays.length - 1], target);
         // System.out.println("COST: " + Main.BLUE + cost + Main.RESET);
 
         //========== BACKPROPAGATE ==========//

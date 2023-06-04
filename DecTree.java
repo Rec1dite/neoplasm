@@ -2,18 +2,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DecTree {
-    static final int maxDepth = 5;
-    DecNode root;
+    static final int maxDepth = 2;
+    static final double chanceOfLeaf = 0.3;
+    Node root;
     double value; // Approximation of accuracy
     int totalDepth = 0;
 
+    // Generate a random decision tree
     DecTree() {
-        root = new DecNode();
+        // Pick random root
+        DecNode newRoot = DecNode.random();
+        newRoot.fillWithRandom(maxDepth);
+        this.root = newRoot;
     }
 
     // Copy constructor
     DecTree(DecTree other) {
-        root = new DecNode(other.root);
+        if (other.root instanceof LeafNode) {
+            root = new LeafNode((LeafNode)other.root);
+        }
+        else if (other.root instanceof DecNode) {
+            root = new DecNode((DecNode)other.root);
+        }
     }
 
     // Evaluate the tree on a set of instances
@@ -23,7 +33,10 @@ public class DecTree {
         value = 0;
         for (TrainingData instance : instances) {
             int result = root.decide(instance);
-            if (result == instance.outputData().get(0, 1)) {
+
+            // If correct
+            if (result == (int)instance.outputData().get(1, 0)) {
+                // System.out.print(Main.BLUE + result + Main.RESET);
                 value += 1.0;
             }
         }
@@ -33,113 +46,279 @@ public class DecTree {
     public void mutate() {
         // { subtree removal, subtree addition }
 
-        if (Math.random() > 0.3) {
+        if (Utils.gen.nextDouble() > 0.3) {
             // Remove a subtree
 
             // Pick random depth
-            int removeDepth = (int)(Math.random() * maxDepth);
+            int removeDepth = Utils.gen.nextInt(maxDepth);
 
             if (removeDepth == 0) // Remove the root
             {
-                root = new DecNode();
+                // root = DecNode.random();
             }
             else // Remove a subtree at the given depth
             {
-                List<DecNode> parents = getNodesAtDepth(root, removeDepth-1);
+                // List<DecNode> parents = getNodesAtDepth(root, removeDepth-1);
 
-                for (DecNode parent : parents) {
-                    if (parent.children.size() > 0) {
-                        int removeIndex = (int)(Math.random() * parent.children.size());
-                        parent.children.remove(removeIndex);
-                    }
-                }
+                // for (DecNode parent : parents) {
+
+                //     if (parent.children.size() > 0) {
+                //         int removeIndex = (int)(Utils.gen.nextDouble() * parent.children.size());
+                //         parent.children.remove(removeIndex);
+                //     }
+
+                // }
             }
         }
 
         // Always try add a subtree
+        if (this.root instanceof DecNode) {
+            ((DecNode)this.root).fillWithRandom(maxDepth);
+        }
+
+        prune();
     }
 
     // Remove all nodes with a depth greater than maxDepth
     public void prune() {
-        List<DecNode> toRemove = getNodesAtDepth(root, maxDepth-1);
-        for (DecNode node : toRemove) {
-            node.children.clear();
+        if (root instanceof LeafNode) return;
+
+        List<Node> hedge = getNodesAtDepth((DecNode)root, maxDepth-1);
+
+        for (Node node : hedge) {
+            if (node instanceof DecNode)
+            {
+                // Trim from here
+                for (int i = 0; i < ((DecNode)node).children.size(); i++) {
+
+                    // Past this point all nodes must be leaves
+                    if (((DecNode)node).children.get(i) instanceof DecNode)
+                    {
+                        ((DecNode)node).children.set(i, new LeafNode());
+                    }
+                }
+            }
         }
     }
 
-    public List<DecNode> getNodesAtDepth(DecNode from, int depth) {
-        List<DecNode> result = new ArrayList<>();
+    public List<Node> getNodesAtDepth(DecNode from, int depth) {
+        List<Node> result = new ArrayList<>();
+        if (depth == 0) {
+            result.add(from);
+            return result;
+        }
 
-        for (DecNode child : from.children) {
-            if (child.depth == depth) {
-                result.add(child);
-            }
-            else {
-                result.addAll(getNodesAtDepth(child, depth));
+        for (Node child : from.children) {
+            if (child instanceof DecNode)
+            {
+                result.addAll(getNodesAtDepth((DecNode)child, depth-1));
             }
         }
 
         return result;
     }
 
+    // Swap only direct children of the root
     public void swapSubtree(DecTree other) {
+        if (this.root instanceof DecTree) {
+            // Pick random child of this.root
+            int thisIndex = Utils.gen.nextInt(((DecNode)this.root).children.size());
+            Node thisChild = ((DecNode)this.root).getChild(thisIndex);
+
+            // Copy
+            if (thisChild instanceof LeafNode) thisChild = new LeafNode((LeafNode)thisChild);
+            else if (thisChild instanceof DecNode) thisChild = new DecNode((DecNode)thisChild);
+
+            // Pick random child of other.root
+            int otherIndex = Utils.gen.nextInt(((DecNode)other.root).children.size());
+            Node otherChild = ((DecNode)other.root).getChild(otherIndex);
+            System.out.println(Main.GREEN + "Swapping " + thisIndex + " with " + otherIndex + Main.RESET);
+
+            // Copy
+            if (otherChild instanceof LeafNode) otherChild = new LeafNode((LeafNode)otherChild);
+            else if (otherChild instanceof DecNode) otherChild = new DecNode((DecNode)otherChild);
+
+            // Swap
+            ((DecNode)this.root).replaceChild(thisIndex, otherChild);
+            ((DecNode)other.root).replaceChild(otherIndex, thisChild);
+        }
     }
 
     public double getValue() {
         return this.value;
     }
 
-    class DecNode {
-        List<DecNode> children;
-        int decFactor = 0; // The variable upon which we decide
-        int result = 0; // The result if we are a leaf node {0, 1}
-        int depth = 0; // The depth of this node in the tree
+    @Override
+    public String toString() {
+        return "[" + value + "]" + root.toString(0);
+    }
 
-        DecNode() {
+    //========== NODES ==========//
+    static interface Node {
+        public int decide(TrainingData data);
+        public String toString(int indent);
+    }
+
+    // Immutable
+    static class LeafNode implements Node {
+        final int result; // {0, 1}
+
+        LeafNode () {
+            this.result = Utils.gen.nextInt(2);
+        }
+
+        LeafNode (int result) {
+            this.result = result;
+        }
+
+        LeafNode (LeafNode other) {
+            this.result = other.result;
+        }
+
+        @Override
+        public int decide(TrainingData data) {
+            return result;
+        }
+
+        public String toString(int indent) {
+            return Main.GREEN + result + Main.RESET;
+        }
+    }
+
+    static class DecNode implements Node {
+        List<Node> children;
+        int decFactor; // The variable upon which we decide
+
+        DecNode(int decFactor) {
             this.children = new ArrayList<>();
-            this.decFactor = -1;
+            updateDecFactor(decFactor);
+        }
+
+        void updateDecFactor(int decFactor) {
+            this.decFactor = decFactor;
+            int numChildren = 0;
+
+            switch(decFactor) {
+                case 0: numChildren = 9;    break; // age
+                case 1: numChildren = 3;    break; // menopause
+                case 2: numChildren = 12;   break; // tumor_size
+                case 3: numChildren = 13;   break; // inv_nodes
+                case 4: numChildren = 2;    break; // node_caps
+                case 5: numChildren = 3;    break; // deg_malig
+                case 6: numChildren = 2;    break; // breast
+                case 7: numChildren = 5;    break; // breast_quad
+                case 8: numChildren = 2;    break; // irradiat
+                default: this.decFactor = -1;
+            }
+            if (this.children.size() > numChildren)
+            {
+                this.children = this.children.subList(0, numChildren);
+            }
+            else if (this.children.size() < numChildren)
+            {
+                for (int i = this.children.size(); i < numChildren; i++) {
+                    this.children.add(new LeafNode());
+                }
+            }
         }
 
         // Copy constructor
         DecNode(DecNode other) {
             this.decFactor = other.decFactor;
-            this.result = other.result;
-            for (DecNode child : other.children) {
-                this.addChild(new DecNode(child));
+            this.children = new ArrayList<>();
+
+            for (Node child : other.children) {
+                if (child instanceof LeafNode)
+                {
+                    this.children.add(new LeafNode((LeafNode)child));
+                }
+                else if (child instanceof DecNode)
+                {
+                    this.children.add(new DecNode((DecNode)child));
+                }
             }
         }
 
-        boolean replaceChild(int index, DecNode child) {
+        static DecNode random() {
+            return new DecNode((Utils.gen.nextInt(9)));
+        }
+
+        Node getChild(int index) {
+            if (index < 0 || index >= children.size()) return null;
+            return this.children.get(index);
+        }
+
+        boolean replaceChild(int index, Node child) {
             if (index < 0 || index >= children.size()) return false;
-
             this.children.set(index, child);
-            child.depth = this.depth + 1;
             return true;
         }
 
-        boolean addChild(DecNode child) {
-            if (this.depth >= maxDepth) return false;
-            if (this.depth > totalDepth) totalDepth = this.depth;
-
-            this.children.add(child);
-            child.depth = this.depth + 1;
-            return true;
-        }
-
-        public int decide(TrainingData data) {
-            if (decFactor == -1 || children.isEmpty()) { // Leaf node
-                // TODO
-                return result;
-            }
-            else
+        void fillWithRandom(int depth) {
+            if (depth > 0)
             {
-                // Traverse down the tree
-                int fulcrum = (int)data.inputData().get(decFactor, 0);
-                return children.get(fulcrum).decide(data);
+                for (int i = 0; i < children.size(); i++) {
+                    if (Utils.gen.nextDouble() < chanceOfLeaf)
+                    {
+                        children.set(i, new LeafNode());
+                    }
+                    else
+                    {
+                        DecNode newChild = DecNode.random();
+                        newChild.fillWithRandom(depth-1);
+                        children.set(i, newChild);
+                    }
+                }
             }
+            else if (depth <= 0) {
+                // Fill with leaves
+                for (int i = 0; i < children.size(); i++) {
+                    children.set(i, new LeafNode());
+                }
+            }
+        }
+
+        @Override
+        public int decide(TrainingData data) {
+            int fulcrum = (int)data.inputEnums()[decFactor];
+            return children.get(fulcrum).decide(data);
+        }
+
+        public String toString(int indent) {
+            String res = "(" + decFactor + ") " + Main.BLUE + "{" + Main.RESET + "\n";
+            // Draw first child
+            if (children.size() > 0) {
+                res += Utils.repeat(" ", indent+2);
+                res += children.get(0).toString(indent+2);
+            }
+            // Draw remaining children
+            for (int i = 1; i < children.size(); i++) {
+                res += ",";
+
+                if (children.get(i) instanceof DecNode) {
+                    res += "\n" + Utils.repeat(" ", indent);
+                }
+                else res += " ";
+                res += children.get(i).toString(indent+2);
+            }
+            res += "\n" + Utils.repeat(" ", indent);
+            res += Main.BLUE + "}" + Main.RESET;
+            return res;
         }
     }
 }
+
+/*
+0 age             9
+1 menopause       3
+2 tumor_size      12
+3 inv_nodes       13
+4 node_caps       2
+5 deg_malig       3
+6 breast          2
+7 breast_quad     5
+8 irradiat        2
+*/
 
 /*
 type       {"no-recurrence-events", "recurrence-events"}

@@ -1,17 +1,28 @@
+import java.util.Random;
+
 interface TrainingData {
+    public int[] inputEnums();     // Array of enum values
     public Matrix inputData();     // Column vector of values
     public Matrix outputData();    // Column vector one-hot encoded
     public String toString();
 }
 
 class Utils {
+    public static Random gen;
+
     static int enumerate(String[] arr, String val) {
         for (int i = 0; i < arr.length; i++) {
             if (arr[i].equals(val)) {
                 return i;
             }
         }
-        return -1;
+        return 0; // Default to first value
+    }
+
+    static String repeat(String s, int r) {
+        String res = "";
+        for (int i = 0; i < r; i++) res += s;
+        return res;
     }
 }
 
@@ -28,6 +39,20 @@ class CancerData implements TrainingData {
         this.breast =       Utils.enumerate(categories[7], parts[7]);
         this.breast_quad =  Utils.enumerate(categories[8], parts[8]);
         this.irradiat =     Utils.enumerate(categories[9], parts[9]);
+    }
+
+    @Override public int[] inputEnums() {
+        return new int[] {
+            this.age,
+            this.menopause,
+            this.tumor_size,
+            this.inv_nodes,
+            this.node_caps,
+            this.deg_malig,
+            this.breast,
+            this.breast_quad,
+            this.irradiat
+        };
     }
 
     @Override public Matrix inputData() {

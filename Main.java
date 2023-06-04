@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 public class Main {
@@ -52,15 +53,20 @@ public class Main {
                     if (verbose) { System.out.println(PURPLE + "Running " + algo.toString() + RESET); }
                     switch(algo) {
                         case ANN:
-                            ANN ann = new ANN(new int[] {9, 4, 2});
-                            ann.setData(data, 0.8);
-                            ann.train2();
-                            ann.test();
+                            // Seed RNG
+                            Utils.gen = new Random(0);
+
+                            // ANN ann = new ANN(new int[] {9, 5, 4, 5, 2});
+                            // ann.setData(data, 0.8);
+                            // ann.train2();
+                            // ann.test();
                             break;
                         case GP:
-                            // GP gp = new GP();
-                            // gp.setData(data, 0.8);
-                            // gp.optimize();
+                            Utils.gen = new Random();
+
+                            GP gp = new GP();
+                            gp.setData(data, 0.8);
+                            gp.optimize();
                             break;
                     }
                 }

@@ -41,7 +41,7 @@ final public class Matrix {
         Matrix A = new Matrix(R, C);
         for (int r = 0; r < R; r++)
             for (int c = 0; c < C; c++)
-                A.data[r][c] = Math.random();
+                A.data[r][c] = Utils.gen.nextDouble();
         return A;
     }
 
