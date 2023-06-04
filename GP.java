@@ -6,6 +6,7 @@ import java.util.List;
 public class GP {
     TrainingData[] training;
     TrainingData[] testing;
+    DecTree resultTree;
 
     final int DEFAULT_POPULATION_SIZE = 100;
     final int DEFAULT_MAX_GENERATIONS = 3;
@@ -126,7 +127,7 @@ public class GP {
             //===== MUTATE =====//
             // { subtree removal, subtree addition }
             for (int j = 0; j < POPULATION_SIZE; j++) {
-                // population.get(j).mutate();
+                population.get(j).mutate();
             }
 
         }
@@ -139,6 +140,29 @@ public class GP {
             System.out.println("");
         }
 
+        this.resultTree = bestEverIndividual;
         return bestEverIndividual;
+    }
+
+    // Test the resultant best individual from the most recent run
+    void test() {
+        if (resultTree == null) {
+            System.out.println("No result tree to test");
+            return;
+        }
+
+        int numCorrect = 0;
+        for (int i = 0; i < testing.length; i++) {
+            int prediction = resultTree.predict(testing[i]);
+            Matrix actual = testing[i].outputData();
+
+            if (prediction == (int)actual.get(1, 0)) {
+                numCorrect++;
+            }
+
+            // System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
+            // System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
+        }
+        System.out.println("Accuracy: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + (double)numCorrect/testing.length + Main.RESET);
     }
 }

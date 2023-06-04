@@ -67,6 +67,7 @@ public class Main {
                             GP gp = new GP();
                             gp.setData(data, 0.8);
                             gp.optimize();
+                            gp.test();
                             break;
                     }
                 }

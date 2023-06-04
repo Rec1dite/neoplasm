@@ -2,8 +2,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DecTree {
-    static final int maxDepth = 2;
+    static final int maxDepth = 3;
     static final double chanceOfLeaf = 0.3;
+    static final double chanceToPerturbLeaf = 0.4;
     Node root;
     double value; // Approximation of accuracy
     int totalDepth = 0;
@@ -43,35 +44,51 @@ public class DecTree {
         value /= instances.length;
     }
 
+    int predict(TrainingData instance) {
+        return root.decide(instance);
+    }
+
     public void mutate() {
         // { subtree removal, subtree addition }
 
         if (Utils.gen.nextDouble() > 0.3) {
-            // Remove a subtree
+            //===== REMOVE A SUBTREE =====//
 
-            // Pick random depth
-            int removeDepth = Utils.gen.nextInt(maxDepth);
-
-            if (removeDepth == 0) // Remove the root
-            {
-                // root = DecNode.random();
+            if (root instanceof LeafNode) {
+                // All we can do is perturb the value
+                if (Utils.gen.nextDouble() < chanceToPerturbLeaf) root = new LeafNode();
             }
-            else // Remove a subtree at the given depth
-            {
-                // List<DecNode> parents = getNodesAtDepth(root, removeDepth-1);
+            else {
 
-                // for (DecNode parent : parents) {
+                // Pick random depth that isn't root
+                int removeDepth = Utils.gen.nextInt(maxDepth-1)+1;
 
-                //     if (parent.children.size() > 0) {
-                //         int removeIndex = (int)(Utils.gen.nextDouble() * parent.children.size());
-                //         parent.children.remove(removeIndex);
-                //     }
+                // Remove a subtree at the given depth
+                List<Node> parents = getNodesAtDepth((DecNode)root, removeDepth);
 
-                // }
+                for (int n = 0; n < parents.size(); n++) {
+                    if (parents.get(n) instanceof DecNode) {
+
+                        if (((DecNode)parents.get(n)).children.size() > 0) {
+                            int removeIndex = (int)(Utils.gen.nextInt(((DecNode)parents.get(n)).children.size()));
+                            ((DecNode)parents.get(n)).children.remove(removeIndex);
+                        }
+
+                    }
+                    else if (parents.get(n) instanceof LeafNode)
+                    {
+                        // Perturb leaf
+                        if (Utils.gen.nextDouble() < chanceToPerturbLeaf) {
+                            parents.set(n, new LeafNode());
+                        }
+                    }
+                }
+
             }
         }
 
-        // Always try add a subtree
+        //===== ADD A SUBTREE =====//
+        // Always try
         if (this.root instanceof DecNode) {
             ((DecNode)this.root).fillWithRandom(maxDepth);
         }
