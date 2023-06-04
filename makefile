@@ -1,4 +1,4 @@
-all: build run
+all: build run clean
 
 build:
 	javac *.java

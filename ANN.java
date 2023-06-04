@@ -7,9 +7,9 @@ public class ANN {
     TrainingData[] training;
     TrainingData[] testing;
     int batchSize = 10;
-    int maxEpochs = 10;
+    int maxEpochs = 50;
     double acceptableCost = 0.01; //If we get below this cost, we're done
-    double learningRate = 0.01;
+    double learningRate = 0.001;
 
     ANN(int[] layerSizes) {
         layers = new Layer[layerSizes.length - 1];
@@ -64,14 +64,28 @@ public class ANN {
     }
 
     void test() {
+        double avgCost = 0.0;
+        int numCorrect = 0;
         for (int i = 0; i < testing.length; i++) {
             Matrix prediction = predict(testing[i].inputData());
             Matrix actual = testing[i].outputData();
 
+            if (prediction.argMax().equals(actual.argMax())) {
+                numCorrect++;
+            }
+
+            double cost = costFunction.f(prediction, actual);
+
             System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
+            System.out.println("ARGMAX:\n" + Main.BLUE + prediction.argMax() + Main.RESET);
             System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
-            System.out.println("COST: " + Main.YELLOW + costFunction.f(prediction, actual) + Main.RESET);
+            System.out.println("COST: " + Main.YELLOW + cost+ Main.RESET);
+
+            avgCost += cost;
         }
+        avgCost /= testing.length;
+        System.out.println("AVG COST: " + Main.PURPLE + avgCost + Main.RESET);
+        System.out.println("Accuracy: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + (double)numCorrect/testing.length + Main.RESET);
     }
 
     // Pick a random sample of n elements from the training data
@@ -313,5 +327,85 @@ public class ANN {
             return actual.zipWith(prediction, a -> p -> -(a/p) + ((1-a)/(1-p)))
                 .map(x -> Double.isFinite(x) ? x : 0.0);
         }
+    }
+
+    //==================================================
+
+    private Matrix calcGradient(Matrix layer, Matrix err, Activation act) {
+        Matrix gradient = layer.map(act::df);
+        gradient = gradient.hadamard(err);
+        return gradient.mult(learningRate);
+    }
+
+    private Matrix calcDelta(Matrix gradient, Matrix layer) {
+        return gradient.mult(layer.transpose());
+    }
+
+    // Generic function to calculate one layer
+    private Matrix calcLayer(Matrix weights, Matrix bias, Matrix input, Activation act) {
+        // System.out.println("Calculating...");
+        Matrix result = weights.mult(input);
+        // System.out.println(result);
+        result = result.add(bias);
+        // System.out.println(result);
+        result = result.map(act::f);
+        // System.out.println(act);
+        // System.out.println(result);
+        // System.out.println("------>");
+        return result;
+    }
+
+    public void train2() {
+        double avgCost = Double.MAX_VALUE;
+        for (int i = 0; i < maxEpochs; i++) {
+            avgCost = trainBatch();
+        }
+    }
+
+    public double trainBatch() {
+        double avgCost = 0;
+        TrainingData[] batch = getRandomBatch();
+        for(int i = 0; i < batch.length; i++) {
+            avgCost += trainInstance(batch[i].inputData(), batch[i].outputData());
+        }
+        return avgCost / batch.length;
+    }
+
+    // Only trains a single instance
+    public double trainInstance(Matrix input, Matrix target) {
+        //========== FEED FORWARD ==========//
+        Matrix lays[] = new Matrix[layers.length + 1];
+        lays[0] = input;
+
+        // From first hidden layer to output layer
+        // Calculate the `a` value of each layer
+        for (int j = 1; j < lays.length; j++) {
+            lays[j] = calcLayer(layers[j-1].weights, layers[j-1].biases, input, layers[j-1].activation);
+            input = lays[j];
+        }
+
+        double cost = new MeanSquaredError().f(lays[lays.length - 1], target);
+        // System.out.println("COST: " + Main.BLUE + cost + Main.RESET);
+
+        //========== BACKPROPAGATE ==========//
+        // From output layer to first hidden layer (exclude input layer)
+        Matrix currTarget = target;
+        for (int n = lays.length-1; n > 0; n--) {
+
+            Matrix errors = currTarget.sub(lays[n]);
+            Matrix gradients = calcGradient(lays[n], errors, new ReLU());
+            Matrix deltas = calcDelta(gradients, lays[n - 1]);
+
+            //Update weights / biases
+            layers[n-1].biases = layers[n-1].biases.add(gradients.mult(learningRate));
+
+            layers[n-1].weights = layers[n-1].weights.add(deltas.mult(learningRate));
+
+            // Calculate and set target for previous (next) layer
+            Matrix previousError = layers[n-1].weights.transpose().mult(errors);
+            currTarget = previousError.add(lays[n - 1]);
+        }
+
+        return cost;
     }
 }

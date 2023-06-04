@@ -45,7 +45,7 @@ class CancerData implements TrainingData {
     }
 
     @Override public Matrix outputData() {
-        double[] values = new double[2];
+        double[] values = new double[] { 0.0, 0.0 };
         values[this.type] = 1.0; // One-hot encoding
         return Matrix.columnVector(values);
     }
@@ -61,7 +61,7 @@ class CancerData implements TrainingData {
     int breast_quad;
     int irradiat;
 
-    static final String[][] categories = new String[][] {
+    public static final String[][] categories = new String[][] {
         new String[] {"no-recurrence-events", "recurrence-events"},
         new String[] {"10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80-89", "90-99"},
         new String[] {"lt40", "ge40", "premeno"},

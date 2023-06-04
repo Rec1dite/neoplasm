@@ -195,6 +195,20 @@ final public class Matrix {
 
     }
 
+    // Returns a RCPair the row and column of the maximum value
+    public RCPair argMax() {
+        RCPair res = new RCPair(-1, -1);
+        double maxVal = Double.NEGATIVE_INFINITY;
+
+        for (int r = 0; r < R; r++)
+            for (int c = 0; c < C; c++)
+                if (data[r][c] > maxVal) {
+                    maxVal = data[r][c];
+                    res = new RCPair(r, c);
+                }
+        return res;
+    }
+
     public double get(int r, int c) {
         return data[r][c];
     }
@@ -211,5 +225,25 @@ final public class Matrix {
 
     public String dims() {
         return "(" + R + ", " + C + ")";
+    }
+
+    class RCPair {
+        int r;
+        int c;
+
+        RCPair(int r, int c) {
+            this.r = r;
+            this.c = c;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + r + ", " + c + ")";
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return ((RCPair)other).r == r && ((RCPair)other).c == c;
+        }
     }
 }

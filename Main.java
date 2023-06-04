@@ -54,16 +54,13 @@ public class Main {
                         case ANN:
                             ANN ann = new ANN(new int[] {9, 4, 2});
                             ann.setData(data, 0.8);
-                            ann.train();
+                            ann.train2();
                             ann.test();
-                            // System.out.println(ann.predict(Matrix.random(3, 1)));
-                            // Split into training / testing sets
-
-                            // Train:
-
-                            // Predict:
                             break;
                         case GP:
+                            // GP gp = new GP();
+                            // gp.setData(data, 0.8);
+                            // gp.optimize();
                             break;
                     }
                 }
