@@ -46,28 +46,31 @@ public class Main {
                 String filePath = f.getAbsolutePath();
                 List<TrainingData> data = readCancerDataFromFile(filePath);
 
-                // for (TrainingData d : data) System.out.println(d);
-
                 //===== RUN ALGORITHMS =====//
+                long seed = 0xD3ADB33F;
                 for (Algo algo : algos) {
                     if (verbose) { System.out.println(PURPLE + "Running " + algo.toString() + RESET); }
                     switch(algo) {
-                        case ANN:
-                            // Seed RNG
-                            Utils.gen = new Random(0);
-
-                            // ANN ann = new ANN(new int[] {9, 5, 4, 5, 2});
-                            // ann.setData(data, 0.8);
-                            // ann.train2();
-                            // ann.test();
-                            break;
                         case GP:
-                            Utils.gen = new Random();
+                            Utils.gen = new Random(seed);
 
                             GP gp = new GP();
+                            gp.setVerbose(verbose);
                             gp.setData(data, 0.8);
                             gp.optimize();
                             gp.test();
+                            System.out.println();
+                            break;
+                        case ANN:
+                            // Seed RNG
+                            Utils.gen = new Random(seed);
+
+                            ANN ann = new ANN(new int[] {9, 5, 3, 5, 2});
+                            ann.setVerbose(verbose);
+                            ann.setData(data, 0.8);
+                            ann.train2();
+                            ann.test();
+                            System.out.println();
                             break;
                     }
                 }

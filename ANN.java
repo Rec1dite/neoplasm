@@ -2,6 +2,7 @@
 import java.util.List;
 
 public class ANN {
+    boolean verbose = false;
     Layer[] layers;
     CostFunction costFunction;
     TrainingData[] training;
@@ -263,37 +264,6 @@ public class ANN {
         @Override public double df(double x) { return f(x) * (1 - f(x)); }
     }
 
-    // class Softmax implements Activation {
-    // @Override
-    // public double f(double[] x) {
-    //     double[] expValues = new double[x.length];
-    //     double sum = 0.0;
-
-    //     for (int i = 0; i < x.length; i++) {
-    //         expValues[i] = Math.exp(x[i]);
-    //         sum += expValues[i];
-    //     }
-
-    //     for (int i = 0; i < x.length; i++) {
-    //         expValues[i] /= sum;
-    //     }
-
-    //     return expValues;
-    // }
-
-    // @Override
-    // public double[] df(double[] x) {
-    //     double[] softmaxValues = f(x);
-    //     double[] dfValues = new double[x.length];
-
-    //     for (int i = 0; i < x.length; i++) {
-    //         dfValues[i] = softmaxValues[i] * (1 - softmaxValues[i]);
-    //     }
-
-    //     return dfValues;
-    //     }
-    // }
-
     interface CostFunction {
         public double f(Matrix prediction, Matrix actual);
         public Matrix outputError(Matrix prediction, Matrix actual);
@@ -410,5 +380,9 @@ public class ANN {
         }
 
         return cost;
+    }
+
+    void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 }

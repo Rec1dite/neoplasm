@@ -7,12 +7,15 @@ public class GP {
     TrainingData[] training;
     TrainingData[] testing;
     DecTree resultTree;
+    boolean verbose = false;
 
     final int DEFAULT_POPULATION_SIZE = 100;
-    final int DEFAULT_MAX_GENERATIONS = 3;
+    final int DEFAULT_MAX_GENERATIONS = 50;
     int POPULATION_SIZE = DEFAULT_POPULATION_SIZE;
     int MAX_GENERATIONS = DEFAULT_MAX_GENERATIONS;
     int EVALUATION_BATCH_SIZE = 200;
+
+    final double trainTestDisparityLimit = 0.1;
 
     GP() {}
 
@@ -68,15 +71,13 @@ public class GP {
         for (int i = 0; i < POPULATION_SIZE; i++) {
             DecTree decTree = new DecTree();
             population.add(decTree);
-            // System.out.println(decTree);
-            // System.out.println("====================");
         }
-        // if (true) return null;
 
         DecTree bestEverIndividual = null; // The best performing tree ever
 
         for (int i = 0; i < MAX_GENERATIONS; i++) {
-            System.out.println("\n=============== " + Main.BLUE + "GENERATION " + i + ":" + Main.RESET + "===============");
+            if (verbose)
+            System.out.println("\n========== " + Main.BLUE + "GENERATION " + i + Main.RESET + " ==========");
             //===== SELECT PARENTS =====//
             // (Pick upper half of population by value)
 
@@ -86,21 +87,22 @@ public class GP {
             }
             Collections.sort(population, Comparator.comparing(DecTree::getValue));
 
-            // Print population
-            for (DecTree decTree : population) {
-                System.out.print(Main.BLUE + decTree.getValue() + Main.RESET + ", ");
-            }
-
             // Try update best ever individual
             DecTree bestTreeThisRound = population.get(POPULATION_SIZE-1);
+            double testAcc = test(bestTreeThisRound);
             if (
                 bestEverIndividual == null ||
-                bestTreeThisRound.getValue() > bestEverIndividual.getValue()
+                (
+                    bestTreeThisRound.getValue() > bestEverIndividual.getValue() &&
+                    bestTreeThisRound.getValue()-testAcc < trainTestDisparityLimit // Avoid overfitting
+                )
             ) {
                 // System.out.println("\n" + Main.GREEN + "BEST THIS ROUND: " + Main.YELLOW + bestTreeThisRound + Main.RESET);
                 bestEverIndividual = new DecTree(bestTreeThisRound);
                 bestEverIndividual.evaluate(getRandomBatch());
             }
+            if (verbose)
+            System.out.println("TRAIN ACCURACY: " + Main.YELLOW + bestTreeThisRound.getValue() + Main.RESET);
 
             //===== CROSSOVER =====//
             // { subtree swap }
@@ -135,8 +137,8 @@ public class GP {
         //===== RETURN BEST INDIVIDUAL =====//
         if (Main.verbose) {
             System.out.println();
-            System.out.println(Main.GREEN + "BEST SOLUTION: " + Main.YELLOW + bestEverIndividual + Main.RESET);
-            System.out.println(Main.GREEN + "VALUE:\t" + Main.RED + bestEverIndividual.getValue() + Main.RESET);
+            System.out.println(Main.GREEN + "BEST SOLUTION:\t" + Main.YELLOW + bestEverIndividual + Main.RESET);
+            System.out.println(Main.GREEN + "TRAIN ACCURACY:\t" + Main.RED + bestEverIndividual.getValue() + Main.RESET);
             System.out.println("");
         }
 
@@ -150,10 +152,18 @@ public class GP {
             System.out.println("No result tree to test");
             return;
         }
+        boolean temp = verbose;
+        verbose = true;
+        test(resultTree);
+        verbose = temp;
+    }
+
+    // Test a tree against the test set
+    double test(DecTree tree) {
 
         int numCorrect = 0;
         for (int i = 0; i < testing.length; i++) {
-            int prediction = resultTree.predict(testing[i]);
+            int prediction = tree.predict(testing[i]);
             Matrix actual = testing[i].outputData();
 
             if (prediction == (int)actual.get(1, 0)) {
@@ -163,6 +173,14 @@ public class GP {
             // System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
             // System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
         }
-        System.out.println("Accuracy: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + (double)numCorrect/testing.length + Main.RESET);
+        double acc = (double)numCorrect/testing.length;
+        if (verbose)
+        System.out.println("TEST ACCURACY: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + acc + Main.RESET);
+
+        return acc;
+    }
+
+    void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 }
