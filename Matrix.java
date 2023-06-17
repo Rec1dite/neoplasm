@@ -1,4 +1,4 @@
-// Adapted from: https://introcs.cs.princeton.edu/java/95linear/Matrix.java.html
+// Adapted from: [https://introcs.cs.princeton.edu/java/95linear/Matrix.java.html]
 // Immutable matrix implementation
 
 import java.util.function.Function;

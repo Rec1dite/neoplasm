@@ -302,7 +302,7 @@ public class DecTree {
         }
 
         public String toString(int indent) {
-            String res = "(" + decFactor + ") " + Main.BLUE + "{" + Main.RESET + "\n";
+            String res = "(" + CancerData.labels[decFactor] + ") " + Main.BLUE + "{" + Main.RESET + "\n";
             // Draw first child
             if (children.size() > 0) {
                 res += Utils.repeat(" ", indent+2);

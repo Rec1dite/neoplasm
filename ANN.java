@@ -1,4 +1,3 @@
-// A simple feedforward multilayer perceptron
 import java.util.List;
 
 public class ANN {
@@ -66,26 +65,49 @@ public class ANN {
     }
 
     void test() {
+
         double avgCost = 0.0;
-        int numCorrect = 0;
+        int posCorrect = 0;
+        int negCorrect = 0;
+        int posIncorrect = 0;
+        int negIncorrect = 0;
         for (int i = 0; i < testing.length; i++) {
             Matrix prediction = predict(testing[i].inputData());
             Matrix actual = testing[i].outputData();
 
             if (prediction.argMax().equals(actual.argMax())) {
-                numCorrect++;
+                if ((int)prediction.get(1, 0) == 1) {
+                    posCorrect++;
+                } else {
+                    negCorrect++;
+                }
+            }
+            else {
+                if ((int)prediction.get(1, 0) == 1) {
+                    posIncorrect++;
+                } else {
+                    negIncorrect++;
+                }
             }
 
             double cost = costFunction.f(prediction, actual);
             avgCost += cost;
-
-            // System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
-            // System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
-            // System.out.println("COST: " + Main.YELLOW + cost+ Main.RESET);
         }
+        int numCorrect = posCorrect + negCorrect;
+        double acc = (double)numCorrect/testing.length;
         avgCost /= testing.length;
         System.out.println("AVG COST: " + Main.PURPLE + avgCost + Main.RESET);
         System.out.println("Accuracy: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + (double)numCorrect/testing.length + Main.RESET);
+        if (verbose) {
+            System.out.println("TEST ACCURACY: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + acc + Main.RESET);
+
+            // Print confusion matrix
+            System.out.println("CONFUSION MATRIX:");
+            System.out.println("\t\t\t" + Main.BLUE + "ACTUAL" + Main.RESET);
+            System.out.println("\t\t\t" + Main.BLUE + "0" + Main.RESET + "\t" + Main.BLUE + "1" + Main.RESET);
+            System.out.println(Main.BLUE + "PREDICTED\t0" + Main.RESET + "\t" + negCorrect + "\t" + negIncorrect);
+            System.out.println(Main.BLUE + "\t\t1" + Main.RESET + "\t" + posIncorrect + "\t" + posCorrect);
+        }
     }
 
     // Pick a random sample of n elements from the training data
@@ -358,7 +380,8 @@ public class ANN {
         }
 
         double cost = costFunction.f(lays[lays.length - 1], target);
-        // System.out.println("COST: " + Main.BLUE + cost + Main.RESET);
+        if (verbose)
+        System.out.println("COST: " + Main.BLUE + cost + Main.RESET);
 
         //========== BACKPROPAGATE ==========//
         // From output layer to first hidden layer (exclude input layer)

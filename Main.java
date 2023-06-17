@@ -47,41 +47,28 @@ public class Main {
                 List<TrainingData> data = readCancerDataFromFile(filePath);
 
                 //===== RUN ALGORITHMS =====//
-                long seed = 0xD3ADB33F;
-                for (Algo algo : algos) {
-                    if (verbose) { System.out.println(PURPLE + "Running " + algo.toString() + RESET); }
-                    switch(algo) {
-                        case GP:
-                            Utils.gen = new Random(seed);
+                // Set this manually for consistent results
+                long seed = (long)(1000000*Math.random());
 
-                            GP gp = new GP();
-                            gp.setVerbose(verbose);
-                            gp.setData(data, 0.8);
-                            gp.optimize();
-                            gp.test();
-                            System.out.println();
-                            break;
-                        case ANN:
-                            // Seed RNG
-                            Utils.gen = new Random(seed);
+                // ANN
+                System.out.println(GREEN + "<===== Running ANN =====>" + RESET);
+                Utils.gen = new Random(seed);
+                ANN ann = new ANN(new int[] {9, 5, 3, 5, 2});
+                ann.setVerbose(verbose);
+                ann.setData(data, 0.8);
+                ann.train2();
+                ann.test();
+                System.out.println("\n\n");
 
-                            ANN ann = new ANN(new int[] {9, 5, 3, 5, 2});
-                            ann.setVerbose(verbose);
-                            ann.setData(data, 0.8);
-                            ann.train2();
-                            ann.test();
-                            System.out.println();
-                            break;
-                    }
-                }
-
-                //===== PRINT RESULTS =====//
-                // if (gaRes != null) {
-                //     System.out.println(BLUE + "GA\t" + GREEN + f.getName() + "\t" + YELLOW + gaRes.sack.getValue() + RESET + "\t" + gaRes.timeTaken/1000000.0);
-                // }
-                // if (acoRes != null) {
-                //     System.out.println(PURPLE + "ACO\t" + GREEN + f.getName() + "\t" + YELLOW + acoRes.sack.getValue() + RESET + "\t" + acoRes.timeTaken/1000000.0);
-                // }
+                // GP
+                System.out.println(GREEN + "<===== Running GP =====>" + RESET);
+                Utils.gen = new Random(seed);
+                GP gp = new GP();
+                gp.setVerbose(verbose);
+                gp.setData(data, 0.8);
+                gp.optimize();
+                gp.test();
+                System.out.println();
             }
         }
     }

@@ -102,4 +102,5 @@ class CancerData implements TrainingData {
     @Override public String toString() {
         return "[" + type + ", " + age + ", " + menopause + ", " + tumor_size + ", " + inv_nodes + ", " + node_caps + ", " + deg_malig + ", " + breast + ", " + breast_quad + ", " + irradiat + "]";
     }
+    public static final String[] labels = new String[] { "age", "menopause", "tumor_size", "inv_nodes", "node_caps", "deg_malig", "breast", "breast_quad", "irradiat" };
 }

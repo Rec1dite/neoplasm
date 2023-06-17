@@ -1,5 +1,4 @@
 # ANN and Decision Trees for Cancer Classification
-> Dino Gironi (u21630276)
 
 ## Usage
 ```bash
@@ -9,93 +8,97 @@ make
 
 #===== SUPPLYING CUSTOM ARGUMENTS =====#
 # To run both algorithms and obtain summary of results
+make summary
+# OR
 java -cp src/ Main
 # To display help message java -cp src/ Main -h
 
-# To run specific algorithm only
-java -cp src/ Main -a ann
-# or
-java -cp src/ Main -a gp
-
 # To run in verbose mode
-java -cp src/ Main -va gp
-
-# To set specific population size
-java -cp src/ Main -p 100
-
-# To set specific number of generations/iterations
-java -cp src/ Main -g 100
+make run
+# OR
+java -cp src/ Main -v
 ```
 
 ## Pre-processing of data
-I do not perform any pre-processing of the data, aside from random shuffling and splitting into *training* and *test* sets.
+- Input data is read in from the file and stored as a `CancerData` object inheriting from the `TrainingData` interface.
+- `?` values are simply replaced with `0` values.
+- For the *ANN*, input data is encoded as a 9D vector of enumerated `double` values, while the output is encoded as a 2D vector of one-hot encoded values.
+- For the *GP*, input data is similarly encoded as an array of 9 `int`'s, while the output data is encoded as a single `int` value of either `0` or `1`.
+- When inputting the data into the *ANN* and *GP* models, I first perform random shuffling, before splitting into *training* and *test* sets.
 
-## Training
-
-## Results
-> Seed value: **123456789**
+## Performance
+> Seed value: **0xD3ADB33F**
 
 ### ANN
 | Accuracy | Precision | Recall | F-Measure |
 |----------|-----------|--------|-----------|
-| 0.00     | 0.00      | 0.00   | 0.00      |
+| 0.758621 | 0.758621  | 1.0    | 0.8627    |
 
 **Confusion Matrix**:
-|           | no-rec | rec |
+| Pred\Act. | no-rec | rec |
 |-----------|--------|-----|
-| no-rec    | 190    | 11  |
-| rec       | 60     | 25  |
+| no-rec    | 44     | 14  |
+| rec       | 0      | 0   |
 
 ### GP Decision Tree
 | Accuracy | Precision | Recall | F-Measure |
 |----------|-----------|--------|-----------|
-| 0.00     | 0.00      | 0.00   | 0.00      |
+| 0.758621 | 0.8039    | 0.9111 | 0.8542    |
 
 **Confusion Matrix**:
-|           | no-rec | rec |
+| Pred\Act. | no-rec | rec |
 |-----------|--------|-----|
-| no-rec    | 190    | 11  |
-| rec       | 60     | 25  |
+| no-rec    | 41     | 10  |
+| rec       | 4      | 3   |
 
 ### C4.5 Decision Tree
 | Accuracy | Precision | Recall | F-Measure |
 |----------|-----------|--------|-----------|
 | 75.1748  | 0.741     | 0.752  | 0.715     |
-TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
-0.945    0.706    0.760      0.945    0.843      0.330    0.641     0.760     no-recurrence-events
-0.294    0.055    0.694      0.294    0.413      0.330    0.641     0.475     recurrence-events
-0.752    0.512    0.741      0.752    0.715      0.330    0.641     0.676     
 
 **Confusion Matrix**:
-|           | no-rec | rec |
+| Pred\Act. | no-rec | rec |
 |-----------|--------|-----|
 | no-rec    | 190    | 11  |
 | rec       | 60     | 25  |
 
-## Performance
-```
-Correctly Classified Instances         215               75.1748 %
-Incorrectly Classified Instances        71               24.8252 %
-Kappa statistic                          0.2872
-Mean absolute error                      0.3571
-Root mean squared error                  0.4305
-Relative absolute error                 85.3546 %
-Root relative squared error             94.179  %
-Total Number of Instances              286     
-
-                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
-                 0.945    0.706    0.760      0.945    0.843      0.330    0.641     0.760     no-recurrence-events
-                 0.294    0.055    0.694      0.294    0.413      0.330    0.641     0.475     recurrence-events
-Weighted Avg.    0.752    0.512    0.741      0.752    0.715      0.330    0.641     0.676     
-
-=== Confusion Matrix ===
-
-   a   b   <-- classified as
- 190  11 |   a = no-recurrence-events
-  60  25 |   b = recurrence-events
-```
+### Summary
+| Model     | Accuracy | Precision | Recall | F-Measure |
+|-----------|----------|-----------|--------|-----------|
+| **ANN**   | 0.758621 | 0.758621  | 1.0    | 0.8627    |
+| **GP**    | 0.758621 | 0.8039    | 0.9111 | 0.8542    |
+| **C4.5**  | 75.1748  | 0.741     | 0.752  | 0.715     |
 
 ## Statistical Significance
+
+| ANN vs GP   |         |
+|-------------|---------|
+| T-Statistic | 0.06014 |
+| P-value     | 0.95751 |
+
+| ANN vs C4.5 |         |
+|-------------|---------|
+| T-Statistic | 1.40062 |
+| P-value     | 0.29632 |
+
+| GP vs C4.5  |         |
+|-------------|---------|
+| T-Statistic | 1.42672 |
+| P-value     | 0.28979 |
+
+Given these results:
+  - *ANN vs GP*:
+    - Indicates that the difference between the performance measures of these two models is not statistically significant. We fail to reject the null hypothesis of equal averages at a 95% confidence level.
+
+  - *ANN vs C4.5*:
+    - This also indicates a non-significant difference between the performance measures of these two models.
+    - We fail to reject the null hypothesis of equal averages at a 95% confidence level.
+
+  - *GP vs C4.5*:
+    - Similar to the above cases, this indicates a non-significant difference between the performance measures of these two models.
+    - We again fail to reject the null hypothesis of equal averages at a 95% confidence level.
+
+In conclusion, none of the pairwise model comparisons (ANN vs GP, ANN vs C4.5, GP vs C4.5) show a statistically significant difference in their performance measures, according to the results of these t-tests at a 95% confidence level.
 
 
 ## Description of Algorithms
@@ -130,20 +133,25 @@ This is an implementation of a simple feedforward multilayer perceptron in Java.
     - This method trains a single epoch. It calculates the forward pass, calculates the cost and backpropagates the error to adjust the weights and biases in the model.
 
   - `Layer`:
-    - This is a nested class within `ANN` representing a layer in the neural network, which consists of weights, biases, and an activation function.
+    - Nested class which represents a hidden/output layer in the neural network, which tracks weights, biases, and the activation function.
 
   - `Activation`:
-    - This is an interface for the activation function, which is used to introduce non-linearity into the model. Implementations such as `Identity`, `ReLU`, and `Sigmoid` are provided.
+    - Interface to implement an activation function. So far, implementations include: `Identity`, `ReLU`, and `Sigmoid`.
 
   - `CostFunction`:
-    - This is an interface for the cost function, which is used to measure how well the model is performing. Two implementations `MeanSquaredError` and `CategoricalCrossEntropy` are provided.
+    - Interface for implementing a cost function for the network's output layer.
+    - I've implemented `MeanSquaredError` and `CategoricalCrossEntropy`.
 
   - `train2()`:
     - An alternative simpler training implementation I wrote to compare and contrast.
 
-Note: This code appears to be incomplete. Certain methods and classes are not fully implemented. For example, the `Softmax` class under `Activation` is commented out and the `Utils.gen.nextDouble()` method is not provided in this code snippet. The `TrainingData` class and `Matrix` class are also not defined here. Therefore, the provided code cannot be compiled and run as is. Please ensure to complete these parts before running the code.
+### Genetic Programming for Decision Trees
+**Hyperparameters**:
+> *ReLU* - Rectified Linear Unit is a simple activation function that is *efficient* to compute, and appropriately introduces non-linearity into the model.
+> *maxDepth* (= 3) - The maximum depth of any generated decision tree.
+> *chanceOfLeaf* (= 0.3) - When generating a random tree, the probability of generating a leaf node instead of a decision node.
+> *chanceToPerturbLeaf* (= 0.4) - When mutating a tree, the probability of perturbing an arbitrary leaf node.
 
-### Genetic Programming
 - **Data Handling**:
   - The `setData()` method shuffles the provided data and splits it into *training data* set and *testing data* set.
   - The `getRandomBatch()` method is used to obtain a random subset of the training data to evaluate each individual each generation.
@@ -152,20 +160,33 @@ Note: This code appears to be incomplete. Certain methods and classes are not fu
   - In the `optimize()` method, a population of random recursively-generated decision trees is created.
 
 - **Evaluation**:
-  - The `DecTree::evaluate()` method is used to evaluate the fitness of each decision tree in the population based on a random batch of the training data.
-  - The fitness score is simply how accurately the tree predicts the outcome of the training data. The population is then sorted by their fitness scores.
+  - The `DecTree::evaluate()` method is used to evaluate the fitness of each decision tree in the population based on a random subset of the training data.
+  - The fitness score is simply given by how accurately the tree predicts the outcome of each instance in that random sample.
 
 - **Selection**:
-  - The upper half of the population (those with higher fitness scores) are selected as parents for creating the next generation.
+  - The upper half of the population (with the highest fitness scores) are selected as parents for creating the next generation.
+  - The children of these parents then replace the bottom half of the previous population.
+  - I also take into account *overfitting* when determining the best performing individual in a generation, to ensure that the best performing individual is not simply memorizing the training data.
 
 - **Crossover**:
-  - This is the process of producing offspring by combining the genes of two parents. The crossover operation in this GP is "subtree swap". The children generated from crossover replace the bottom half of the population.
+  - I've implemented a 'subtree swap' for crossover. This simply picks random subtrees in each parent and swaps them around.
 
 - **Mutation**:
-  - This is the process of randomly altering a part of a solution in order to maintain diversity in the population and potentially discover better solutions. In this GP, mutation is performed as "subtree removal" or "subtree addition".
+  - Mutation is done by randomly removing a subtree from the tree. If the tree is not full, then a random subtree is generated to fill the gaps.
 
 - **Termination**:
-  - The process is repeated for a certain number of generations (defined by MAX_GENERATIONS). After all generations are completed, the best decision tree found throughout all generations is returned.
+  - The process is repeated for MAX_GENERATIONS generations.
+  - After all generations are completed, the best decision tree found throughout all generations is returned.
 
 - **Testing**:
-  - The `test()` method is used to evaluate the performance of the best decision tree on the testing data. It counts the number of correct predictions and calculates the accuracy.
+  - The `test()` method is used to evaluate the performance of the best decision tree on the testing data.
+  - It simply counts the number of correct predictions to determine overall accuracy.
+
+
+## References
+  - [How the Backpropagation Algorithm Works](http://neuralnetworksanddeeplearning.com/chap2.html)
+  - [Backpropagation 3Blue1Brown](https://www.youtube.com/watch?v=tIeHLnjs5U8)
+  - [Matrix Implementation in Java](https://introcs.cs.princeton.edu/java/95linear/Matrix.java.html)
+  - [Genetic Programming and Decision Trees](https://scholarworks.calstate.edu/downloads/0v838134c?locale=en)
+  - [Statistical Significance when comparing models for Classification](https://stats.stackexchange.com/a/384485)
+  - [Google Machine Learning Foundational Course - Classification](https://developers.google.com/machine-learning/crash-course/classification/video-lecture)

@@ -87,6 +87,16 @@ public class GP {
             }
             Collections.sort(population, Comparator.comparing(DecTree::getValue));
 
+            // Calculate average value
+            if (verbose) {
+                double avgValue = 0;
+                for (int j = POPULATION_SIZE/2; j < POPULATION_SIZE; j++) {
+                    avgValue += population.get(j).getValue();
+                }
+                avgValue /= POPULATION_SIZE/2;
+                System.out.println("AVERAGE ACCURACY: " + Main.YELLOW + avgValue + Main.RESET);
+            }
+
             // Try update best ever individual
             DecTree bestTreeThisRound = population.get(POPULATION_SIZE-1);
             double testAcc = test(bestTreeThisRound);
@@ -161,21 +171,46 @@ public class GP {
     // Test a tree against the test set
     double test(DecTree tree) {
 
-        int numCorrect = 0;
+        int posCorrect = 0;
+        int negCorrect = 0;
+        int posIncorrect = 0;
+        int negIncorrect = 0;
         for (int i = 0; i < testing.length; i++) {
             int prediction = tree.predict(testing[i]);
             Matrix actual = testing[i].outputData();
 
             if (prediction == (int)actual.get(1, 0)) {
-                numCorrect++;
+                // Prediction is correct
+                if (prediction == 1) {
+                    posCorrect++;
+                } else {
+                    negCorrect++;
+                }
+            }
+            else {
+                if (prediction == 1) {
+                    posIncorrect++;
+                } else {
+                    negIncorrect++;
+                }
             }
 
             // System.out.println("PREDICTION:\n" + Main.BLUE + prediction + Main.RESET);
             // System.out.println("ACTUAL:\n" + Main.BLUE + actual + Main.RESET);
         }
+        int numCorrect = posCorrect + negCorrect;
         double acc = (double)numCorrect/testing.length;
-        if (verbose)
-        System.out.println("TEST ACCURACY: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + acc + Main.RESET);
+
+        if (verbose) {
+            System.out.println("TEST ACCURACY: " + Main.PURPLE + numCorrect + "/" + testing.length + " = " + acc + Main.RESET);
+
+            // Print confusion matrix
+            System.out.println("CONFUSION MATRIX:");
+            System.out.println("\t\t\t" + Main.BLUE + "ACTUAL" + Main.RESET);
+            System.out.println("\t\t\t" + Main.BLUE + "0" + Main.RESET + "\t" + Main.BLUE + "1" + Main.RESET);
+            System.out.println(Main.BLUE + "PREDICTED\t0" + Main.RESET + "\t" + negCorrect + "\t" + negIncorrect);
+            System.out.println(Main.BLUE + "\t\t1" + Main.RESET + "\t" + posIncorrect + "\t" + posCorrect);
+        }
 
         return acc;
     }
