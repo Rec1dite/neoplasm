@@ -17,6 +17,7 @@ public class Main {
 
     static boolean verbose = false;
     static int maxFiles = 100;
+    static long seed = 0xD3ADB33F;
     static Set<Algo> algos = Set.of(Algo.ANN, Algo.GP);
 
     public static void main(String[] args) {
@@ -48,27 +49,33 @@ public class Main {
 
                 //===== RUN ALGORITHMS =====//
                 // Set this manually for consistent results
-                long seed = (long)(1000000*Math.random());
+                if (seed == 0xD3ADB33F) {
+                    seed = (long)(1000000*Math.random());
+                }
 
                 // ANN
-                System.out.println(GREEN + "<===== Running ANN =====>" + RESET);
-                Utils.gen = new Random(seed);
-                ANN ann = new ANN(new int[] {9, 5, 3, 5, 2});
-                ann.setVerbose(verbose);
-                ann.setData(data, 0.8);
-                ann.train2();
-                ann.test();
-                System.out.println("\n\n");
+                if (algos.contains(Algo.ANN)) {
+                    System.out.println(GREEN + "<===== Running ANN =====>" + RESET);
+                    Utils.gen = new Random(seed);
+                    ANN ann = new ANN(new int[] {9, 5, 3, 5, 2});
+                    ann.setVerbose(verbose);
+                    ann.setData(data, 0.8);
+                    ann.train2();
+                    ann.test();
+                    System.out.println("\n\n");
+                }
 
                 // GP
-                System.out.println(GREEN + "<===== Running GP =====>" + RESET);
-                Utils.gen = new Random(seed);
-                GP gp = new GP();
-                gp.setVerbose(verbose);
-                gp.setData(data, 0.8);
-                gp.optimize();
-                gp.test();
-                System.out.println();
+                if (algos.contains(Algo.GP)) {
+                    System.out.println(GREEN + "<===== Running GP =====>" + RESET);
+                    Utils.gen = new Random(seed);
+                    GP gp = new GP();
+                    gp.setVerbose(verbose);
+                    gp.setData(data, 0.8);
+                    gp.optimize();
+                    gp.test();
+                    System.out.println();
+                }
             }
         }
     }
@@ -150,6 +157,20 @@ public class Main {
 
                                 break;
 
+                            case 's': //Set seed
+                                if(!handleParameterizedFlag(c, i, 's')) { return false; }
+
+                                try {
+                                    seed = Integer.parseInt(args[i+1]);
+                                    i++; // Skip parsing the next argument
+                                }
+                                catch (NumberFormatException e) {
+                                    System.out.println(RED + "Failed to parse number argument: " + args[i+1] + RESET);
+                                    return false;
+                                }
+
+                                break;
+
                             case 'v': //Verbose output
                                 verbose = true;
                                 break;
@@ -170,10 +191,10 @@ public class Main {
                             case 'h':
                                 System.out.println("Usage: " + BLUE + "java Main [flags]" + RESET);
                                 System.out.println("-a <algo> \t: Use specific algorithm");
-                                System.out.println("-n <num> \t: Set max number of input files");
-                                System.out.println("-p <num> \t: Set population size");
-                                System.out.println("-g <num> \t: Set max no. of generations");
+                                System.out.println("-n <num> \t: Specify max. no. of input files");
+                                System.out.println("-s <num> \t: Use custom seed");
                                 System.out.println("-v \t\t: Verbose output");
+                                // TODO: -s for setting seed manually
                                 System.out.println("-h \t\t: Print this message");
                                 return false;
 

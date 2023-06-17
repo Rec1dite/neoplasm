@@ -9,5 +9,8 @@ run:
 summary:
 	java Main
 
+help: build
+	java Main -h
+
 clean:
 	rm *.class
